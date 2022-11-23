@@ -62,7 +62,7 @@ FIM:
 			POP    R7  ; FREQUENCIA
 			POP    R6  ; MENOR ELEMENTO DO VETOR
 			POP    R5  ; ENDEREÇO DE INICIO DE UM VETOR DE BYTES
-			JMp $
+			JMP	$
 			NOP
 
 			.data
