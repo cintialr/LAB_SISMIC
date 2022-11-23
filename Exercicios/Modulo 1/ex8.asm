@@ -34,13 +34,13 @@ FIB16:		MOV 	R6, R5		; R7 = R6 + R5
 			ADD 	R7, R5
 			JC 		FIM			; se houver carry chegou no limite
 
-			MOV 	R6, R7		; atualiza os novos números da sequencia Fibonacci
+			MOV 	R6, R7		; atualiza os novos nÃºmeros da sequencia Fibonacci
 			MOV 	R5, R6
 			JMP 	FIB16
 
 FIM:
 			MOV		R5, R10		; guarda em R10 o maior valor possivel em 16 bits
-			ret
+			JMP		$
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
