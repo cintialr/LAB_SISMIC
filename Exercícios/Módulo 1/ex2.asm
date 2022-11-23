@@ -24,7 +24,7 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
 ; Main loop here
 ;-------------------------------------------------------------------------------
 MAIN:
-			PUSH   R5  ; ENDERE«O DE INICIO DE UM VETOR DE BYTES
+			PUSH   R5  ; ENDERE√áO DE INICIO DE UM VETOR DE BYTES
 			PUSH   R6  ; MENOR ELEMENTO DO VETOR
 			PUSH   R7  ; FREQUENCIA
 			PUSH   R8  ; TAM DO VETOR
@@ -40,7 +40,7 @@ MAIOR16:
 			CMP		@R5+,R6
 			JLO		MAIOR
 			JEQ		IGUAL
-			DEC		R8				; N√O … MAIOR NEM IGUAL, ENT√O N√O NOS IMPORTA
+			DEC		R8				; N√ÉO √â MAIOR NEM IGUAL, ENT√ÉO N√ÉO NOS IMPORTA
 			JNZ		MAIOR16			; VOLTA PARA VERIFICAR O PROXIMO
 			JMP		FIM
 
@@ -61,8 +61,8 @@ FIM:
 			POP    R8  ; TAM DO VETOR
 			POP    R7  ; FREQUENCIA
 			POP    R6  ; MENOR ELEMENTO DO VETOR
-			POP    R5  ; ENDERE«O DE INICIO DE UM VETOR DE BYTES
-			RET
+			POP    R5  ; ENDERE√áO DE INICIO DE UM VETOR DE BYTES
+			JMp $
 			NOP
 
 			.data
