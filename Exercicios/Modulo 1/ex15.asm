@@ -33,6 +33,7 @@ CONFIGURA_PINOS:
 	BIC.B   #BIT1, &P1DIR  ; P1.1 = entrada
 	BIS.B   #BIT1, &P1REN  ; Habilita resistor
 	BIS.B   #BIT1, &P1OUT  ; PULLUP
+
 ;  P1.0 - LED1 VERMELHO
 	BIS.B   #BIT0, &P1DIR  ; P1.0 = saida
 	BIC.B   #BIT0, &P1OUT  ; LED apagado
@@ -45,6 +46,7 @@ SW_LEDS:
 	JZ      LED1     ; SE S1 ESTIVER ACIONADO
 	BIC.B   #BIT0, &P1OUT ;  APAGA LED VERMELHO
 
+SW_LEDS1:
 	BIT.B   #BIT1, &P1IN  ; TESTA S2
 	JZ      LED2     ; SE S2 ESTIVER ACIONADO
 	BIC.B   #BIT7, &P4OUT ;  APAGA LED VERDE
@@ -52,15 +54,12 @@ SW_LEDS:
 
 LED1:
 	BIS.B   #BIT0, &P1OUT ; ACENDE LED VERMELHO
-	JMP    	SW_LEDS
-	JMP		$
-	NOP
+	JMP    SW_LEDS1
 
 LED2:
 	BIS.B   #BIT7, &P4OUT ; ACENDE LED VERDE
-	JMP		SW_LEDS
-	JMP		$
-	NOP
+	JMP    SW_LEDS
+
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
