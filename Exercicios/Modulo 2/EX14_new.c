@@ -49,11 +49,11 @@ __interrupt void INT_TA0_CCRn()             // Retorno especial (RETI)
     switch (TA2IV) {
 
         case TA2IV_TA2CCR1:    //CCR1
-            P1OUT &= ~BIT0;
+            P1OUT &= ~BIT0;    //CLR
             break;
 
         case TA2IV_TA2IFG:    //TAIFG
-            P1OUT |= BIT0;
+            P1OUT |= BIT0;    //SET
             break;
 
         default:
