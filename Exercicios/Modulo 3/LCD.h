@@ -16,6 +16,8 @@ int testeLCD;
 
 int data;
 
+uint8_t line = 0x00;
+
 void i2cConfig();
 
 uint8_t i2cSend(uint8_t addr, uint8_t data);

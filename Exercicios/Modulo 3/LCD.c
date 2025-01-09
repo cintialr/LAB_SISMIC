@@ -3,12 +3,12 @@
 void i2cConfig(){
     UCB0CTL1 |= UCSWRST;                    // reset = 1
 
-    // configuração dos pinos
+    // configuraï¿½ï¿½o dos pinos
     // LEDs
     P1OUT &= ~BIT0;                         // Configura o LED vermelho
-    P1DIR |=  BIT0;                         // Saída por padrão em 0
+    P1DIR |=  BIT0;                         // Saï¿½da por padrï¿½o em 0
     P4OUT &= ~BIT7;                         // Configura o LED verde
-    P4DIR |=  BIT7;                         // Saída por padrão em 0
+    P4DIR |=  BIT7;                         // Saï¿½da por padrï¿½o em 0
 
     // B0 = MESTRE
     P3SEL |= BIT1;
@@ -45,7 +45,7 @@ void i2cConfig(){
 
 uint8_t i2cSend(uint8_t addr, uint8_t data)
 {
-     UCB0I2CSA = addr;                      // recebe o endereço a ser testado, no caso SLAVE
+     UCB0I2CSA = addr;                      // recebe o endereï¿½o a ser testado, no caso SLAVE
      UCB0CTL1 |= UCTR;                      // transmissor = 1
      UCB0CTL1 |= UCTXSTT;                   //start = 1
 
@@ -89,11 +89,25 @@ void lcdWriteByte(uint8_t byte, uint8_t isChar){
 }
 
 void lcdPrint(uint8_t * string){
-    while(*string)
-        lcdWriteByte(*string++, CHAR);
+    while(*string){
+        if (*string == '\n')
+        {
+            line ^= BIT6;
+            lcdWriteByte( BIT7 | line, INSTR );
+        }else   
+            lcdWriteByte(*string++, CHAR);
+
+        string++;
+    }
+
 }
 
 void lcdInit(){
+
+    lcdWriteNibble(0x3, INSTR);
+    lcdWriteNibble(0x3, INSTR);         // garante que o lcd em 8 bis
+    lcdWriteNibble(0x3, INSTR);         // antes de entrar no modo 4 bits
+
     lcdWriteNibble(0x2, INSTR);         // modo de 4 bits
 
     lcdWriteByte(0x06, INSTR);         // configura o LCD
