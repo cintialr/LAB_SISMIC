@@ -15,4 +15,5 @@ int main(void)
 	TA0CCR0  = 100 - 1;
 	TA0CCTL0 = CCIE;
 
+
 }
