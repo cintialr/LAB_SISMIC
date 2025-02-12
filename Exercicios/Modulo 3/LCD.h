@@ -4,23 +4,9 @@
 #include <stdint.h>
 #include <msp430.h>
 
-#define LCD 0x27
-#define CHAR 1
-#define INSTR 0
-#define BT BIT3
-#define EN BIT2
-#define RW BIT1
-#define RS BIT0
-
-int testeLCD;
-
-int data;
-
-uint8_t line = 0x00;
-
 void i2cConfig();
 
-uint8_t i2cSend(uint8_t addr, uint8_t data);
+uint8_t i2cSend(uint8_t addr, uint8_t data, uint8_t nBytes);
 
 uint8_t lcdAddr();
 
@@ -33,7 +19,7 @@ void lcdInit();
 void lcdPrint(uint8_t * string);
 
 void lcdPrint(uint8_t * string);
-
+uint8_t i2cWriteByte(uint8_t addr, uint8_t byte);
 
 
 #endif /* LCD_H_ */
