@@ -1,4 +1,17 @@
 #include "LCD.h"
+#define LCD 0x27
+#define CHAR 1
+#define INSTR 0
+#define BT BIT3
+#define EN BIT2
+#define RW BIT1
+#define RS BIT0
+
+int testeLCD;
+
+int data;
+
+uint8_t line = 0x00;
 
 void i2cConfig(){
     UCB0CTL1 |= UCSWRST;                    // reset = 1
