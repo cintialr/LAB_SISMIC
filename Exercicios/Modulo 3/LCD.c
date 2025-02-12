@@ -2,6 +2,10 @@
 
 void i2cConfig(){
     UCB0CTL1 |= UCSWRST;                    // reset = 1
+    UCB0CTL0 = UCMST | UCMODE_3 | UCSYNC;   // MESTRE
+    UCB0CTL1 |= UCSSEL__SMCLK;              // clock SMCLK
+    UCB0BRW = 100;                          // 100kHz
+
 
     // configura��o dos pinos
     // LEDs
@@ -32,30 +36,25 @@ void i2cConfig(){
     P4REN |=  BIT1;                         // Entrada com resistor
     P4OUT |=  BIT1;                         // de pull-up
 
-    UCB0CTL1 |= UCSSEL__SMCLK;              // clock SMCLK
-
-    UCB0BRW = 100;                          // 100kHz
-
-    UCB0CTL0 = UCMST | UCMODE_3;                       // MESTRE
-
-
     UCB0CTL1 &= ~UCSWRST;                   // reset = 0
 
 }
 
-uint8_t i2cSend(uint8_t addr, uint8_t data)
+uint8_t i2cSend(uint8_t addr, uint8_t * data, uint8_t nBytes)
 {
+     UCB1IFG = 0;                           // zera o registro de flags antes
      UCB0I2CSA = addr;                      // recebe o endere�o a ser testado, no caso SLAVE
      UCB0CTL1 |= UCTR;                      // transmissor = 1
      UCB0CTL1 |= UCTXSTT;                   //start = 1
 
      while( !(UCB0IFG & UCTXIFG));
 
-     UCB0TXBUF = data;
+     UCB0TXBUF = *data++;
+    nBytes--;
 
       while (UCB0CTL1 & UCTXSTT);
 
-      UCB0CTL1 |= UCTXSTP;
+   //   UCB0CTL1 |= UCTXSTP;
 
       if (UCB1IFG & UCNACKIFG)
       {
@@ -63,13 +62,20 @@ uint8_t i2cSend(uint8_t addr, uint8_t data)
           while(UCB0CTL1 & UCTXSTP);
           return 1;
       }
+    while(nBytes--){
       while(!(UCB1IFG & UCTXIFG));
-
+        UCB1TXBUF = *data++;
+    }
+    while(!(UCB1IFG & UCTXIFG));
       UCB0CTL1 |= UCTXSTP;
 
       while(UCB0CTL1 & UCTXSTP);
 
       return 0;
+}
+
+uint8_t i2cWriteByte(uint8_t addr, uint8_t byte){
+    return i2cSend(addr, &byte, 1);
 }
 
 // nibble =  agrupamento de 4 bits
