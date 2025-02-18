@@ -10,5 +10,8 @@ void uartOpen(uint8_t interface);
 void uartPrint(char * str);
 void wait(uint16_t time, uint16_t uint);
 void uartBang(uint8_t byte);
+uint8_t uartAvailable();
+uint8_t uartRead(char * str);
+
 
 #endif

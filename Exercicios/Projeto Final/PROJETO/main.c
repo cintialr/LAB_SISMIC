@@ -10,6 +10,9 @@
 #define CLK  BIT4     // P3.4     Serial Clock
 #define DAT  BIT3     // P3.3     Data Input/Output
 
+#define TERM_CLR "\033[2J\r"
+#define TERM_HOME "\033[0;0H"
+
 // Definições de alarme e hora
 unsigned char hour, minute, second;
 unsigned char alarm_hour = 0, alarm_min = 0, alarm_sec = 0;
@@ -22,8 +25,11 @@ volatile uint8_t index= 0;
 volatile char rxBuffer[12];
 volatile uint8_t lcdBlinkState = 0;
 
+void RTC_Init();
+void sendByte(uint8_t data);
 void RTC_SetTime(unsigned char h, unsigned char m, unsigned char s);
 void RTC_SetDay(unsigned char Day, unsigned char d, unsigned char m, unsigned char y);
+unsigned char decToBCD(unsigned char val);
 void RTC_ReadTime();
 void displayDateTime();
 void checkAlarm();
@@ -50,40 +56,74 @@ void main(void) {
     __enable_interrupt(); // Habilita interrupções globais
     i2cConfig();
     lcdInit();
+    RTC_Init();
     uartOpen(1); // Inicializa a UART
     // Dia da semana {0:"Dom"; 1:"Seg"; 2:"Ter"; 3:"Qua"; 4:"Qui"; 5:"Sex"; 6:"Sab"}
-    RTC_SetDay(2, 31, 12, 25);  //Dia da semana, Dia, mes, Ano
+    RTC_SetDay(3, 31, 12, 25);  //Dia da semana, Dia, mes, Ano
     RTC_SetTime(23, 59, 0);
 
-    uartPrint("Digite hh:mm:ss para configurar o alarme.\n");
+    uartPrint("Digite hh:mm para configurar o alarme.\n\r");
+//    uartPrint(TERM_HOME);
 
     while (1) {
         processUART();
         displayDateTime();
-        __delay_cycles(1000000); // 1seg
         if (alarm_active) {
             checkAlarm();
             blinkLCD();
         }
         // estava desligando o LCD
         __low_power_mode_1(); //Economiza energia sem desligar o LCD.
-        __bic_SR_register_on_exit(LPM1_bits);  // Sai do LPM1 após interrupção
-
     }
 }
 
+void RTC_Init() {
+    P3DIR |= RST + CLK; // RST e CLK como saída
+    P3DIR &= ~DAT;      // DAT como entrada
+    P3OUT &= ~(CLK + RST); // Começa com sinais em 0
+}
+void sendByte(uint8_t data) {
+    int i;
+    for (i = 0; i < 8; i++) {
+        P3OUT &= ~CLK;  // Abaixa o clock
+        if (data & 0x01)
+            P3OUT |= DAT;  // Envia bit 1
+        else
+            P3OUT &= ~DAT;  // Envia bit 0
+        P3OUT |= CLK;  // Sobe o clock
+        data >>= 1;
+    }
+}
 void RTC_SetTime(unsigned char h, unsigned char m, unsigned char s) {
+    P3OUT |= RST;  // Ativa RTC
+    sendByte(0x80);  // Comando de escrita para horas
+    sendByte(decToBCD(h));  // Envia hora
+    sendByte(decToBCD(m));  // Envia minuto
+    sendByte(decToBCD(s));  // Envia segundo
+
+    P3OUT &= ~RST;  // Desativa RTC
     hour = h;
     minute = m;
     second = s;
 }
-void RTC_SetDay(unsigned char Day, unsigned char d, unsigned char m, unsigned char y){
+void RTC_SetDay(unsigned char Day, unsigned char d, unsigned char m, unsigned char y) {
+    P3OUT |= RST;  // Ativa o RTC DS1302
+    sendByte(0x86);  // Comando de escrita para o dia da semana
+    sendByte(decToBCD(Day));  // Envia o dia da semana
+    sendByte(decToBCD(d));  // Envia o dia do mês
+    sendByte(decToBCD(m));  // Envia o mês
+    sendByte(decToBCD(y));  // Envia o ano
+    P3OUT &= ~RST;  // Desativa o RTC
+
+    // Atualiza as variáveis globais (não afeta o RTC, apenas mantém o código consistente)
     dayOfWeek = Day;
     day = d;
     month = m;
     year = y;
 }
-
+unsigned char decToBCD(unsigned char val) {
+    return ((val / 10) << 4) | (val % 10);
+}
 void RTC_ReadTime() {
         static const unsigned char daysInMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -125,18 +165,39 @@ void displayDateTime() {
 
     lcdPrint((uint8_t *)linha1);
     lcdPrint((uint8_t *)linha2);
+    __delay_cycles(1000000); // 1seg
+
 }
 
 void checkAlarm() {
-    if (alarm_active && hour == alarm_hour && minute == alarm_min && second == alarm_sec) {
-        uartPrint("ALARME ATIVADO!\n");
-    }
-    if (alarm_active && (hour != alarm_hour || minute != alarm_min || second != alarm_sec)) {
-        alarm_active = 0;
+    static unsigned int start_time = 0;  // Marca o tempo de ativação do alarme
+
+    // Verifica se o alarme está ativo e se o horário corresponde
+    if (alarm_active && hour == alarm_hour && minute == alarm_min) {
+        if (start_time == 0) {  // O alarme acabou de ativar
+            start_time = second;  // Salva o tempo inicial
+        }
+
+        if ((second - start_time) < 60) {  // Pisca por até 60 segundos
+            blinkLCD();
+        } else {  // Depois de 1 minuto, desliga o alarme
+            alarm_active = 0;
+            start_time = 0;  // Reseta o contador do alarme
+        }
+
+        // 🔹 Verifica se algum botão foi pressionado para desligar o alarme
+        if (!(P1IN & BIT1) || !(P2IN & BIT1)) {  // Se P1.1 ou P2.1 forem pressionados
+            alarm_active = 0;  // Desliga o alarme imediatamente
+            start_time = 0;  // Reseta o contador
+            uartPrint("Alarme desligado pelo botão.\n");
+        }
+    } else {
+        start_time = 0;  // Reseta caso a hora não coincida mais
     }
 }
 
-void blinkLCD() {
+
+void blinkLCD() {                   // faz o LCD piscar com o alarme
     static unsigned int counter = 0;
     if (++counter >= 50000) {
         counter = 0;
@@ -150,18 +211,25 @@ void blinkLCD() {
 }
 
 void processUART() {
-    if (index>= 8) {
-        int h, m, s;
-        if (sscanf(rxBuffer, "%02d:%02d:%02d", &h, &m, &s) == 3) {
-            alarm_hour = h;
-            alarm_min = m;
-            alarm_sec = s;
-            alarm_active = 1;
-            uartPrint("Alarme definido para: ");
-            uartPrint(rxBuffer);
-            uartPrint("\n");
+    int h, m;
+    char buffer[6];
+
+    if (uartAvailable() > 0){  // Aguarda pelo menos 5 caracteres (hh:mm)
+        uartRead(buffer);         // Lê os dados do UART
+        buffer[5] = '\0';         // Garante terminação da string
+
+        if (sscanf(buffer, "%02d:%02d", &h, &m) == 2) {  // Valida entrada
+            if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                alarm_hour = h;
+                alarm_min = m;
+                alarm_active = 1;  // Ativa o alarme
+                uartPrint("Alarme definido para: ");
+                uartPrint(buffer);
+                uartPrint("\n");
+            } else {
+                uartPrint("Erro: Formato inválido!\n");
+            }
         }
-        index= 0;
     }
 }
 
@@ -185,8 +253,3 @@ __interrupt void Timer_A_ISR(void) {
     checkAlarm();          // Verifica se o alarme deve tocar
 }
 
-#pragma vector=USCI_A1_VECTOR
-__interrupt void UART_A1_ISR(void) {
-    rxBuffer[index++] = UCA1RXBUF;
-    index&= 0x0F;
-}
