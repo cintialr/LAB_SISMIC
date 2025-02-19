@@ -22,6 +22,7 @@ volatile uint8_t index= 0;
 volatile char rxBuffer[12];
 volatile uint8_t lcdBlinkState = 0;
 
+void RT_WriteByte(uint8_t cmd, uint8_t data);
 void RTC_SetTime(unsigned char h, unsigned char m, unsigned char s);
 void RTC_SetDay(unsigned char Day, unsigned char d, unsigned char m, unsigned char y);
 void RTC_ReadTime();
@@ -53,7 +54,7 @@ void main(void) {
     uartOpen(1); // Inicializa a UART
     // Dia da semana {0:"Dom"; 1:"Seg"; 2:"Ter"; 3:"Qua"; 4:"Qui"; 5:"Sex"; 6:"Sab"}
     RTC_SetDay(2, 31, 12, 25);  //Dia da semana, Dia, mes, Ano
-    RTC_SetTime(23, 59, 0);
+    RTC_SetTime(23, 59, 30);
 
     uartPrint("Digite hh:mm:ss para configurar o alarme.\n");
     lcdClear();
@@ -69,6 +70,7 @@ void main(void) {
 
     }
 }
+
 
 void RTC_SetTime(unsigned char h, unsigned char m, unsigned char s) {
     hour = h;
@@ -123,7 +125,13 @@ void displayDateTime() {
 
     lcdPrint((uint8_t *)linha1);
     lcdPrint((uint8_t *)linha2);
+
+    uartPrint(linha1);
+    uartPrint("\n\r");
+    uartPrint(linha2);
+    uartPrint("\n\r");
     __delay_cycles(1000000);
+
 }
 
 void checkAlarm() {
