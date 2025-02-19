@@ -56,18 +56,16 @@ void main(void) {
     RTC_SetTime(23, 59, 0);
 
     uartPrint("Digite hh:mm:ss para configurar o alarme.\n");
-
+    lcdClear();
     while (1) {
         processUART();
         displayDateTime();
-        __delay_cycles(1000000); // 1seg
         if (alarm_active) {
             checkAlarm();
             blinkLCD();
         }
         // estava desligando o LCD
         __low_power_mode_1(); //Economiza energia sem desligar o LCD.
-        __bic_SR_register_on_exit(LPM1_bits);  // Sai do LPM1 após interrupção
 
     }
 }
@@ -125,6 +123,7 @@ void displayDateTime() {
 
     lcdPrint((uint8_t *)linha1);
     lcdPrint((uint8_t *)linha2);
+    __delay_cycles(1000000);
 }
 
 void checkAlarm() {
@@ -183,10 +182,4 @@ __interrupt void Timer_A_ISR(void) {
     RTC_ReadTime();
     displayDateTime();     // Atualiza o display com a hora e data
     checkAlarm();          // Verifica se o alarme deve tocar
-}
-
-#pragma vector=USCI_A1_VECTOR
-__interrupt void UART_A1_ISR(void) {
-    rxBuffer[index++] = UCA1RXBUF;
-    index&= 0x0F;
 }
